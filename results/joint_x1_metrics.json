@@ -1,0 +1,1 @@
+{"0": {"train_loss": [1.5532443850015254], "test_loss": [0.930225770215222], "train_acc": [0.9154], "test_acc": [0.9176], "train_recall": [0.9154], "test_recall": [], "train_precision": [0.9154], "test_precision": [], "train_f1": [0.9154], "test_f1": [0.8074], "best_train_f1": 0.9153646519888305, "best_test_f1": 0.8073720943099958}}
