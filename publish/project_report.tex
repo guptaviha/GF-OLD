@@ -63,16 +63,15 @@
 \maketitle
 
 \begin{abstract}
-    Transformer-based models have come to dominate natural language processing tasks including semantic evaluation of social media content. Recent research demonstrates that the performance of such models can be improved by incorporating information about the online communities where that content is produced. For our project, we experiment with a novel method for incorporating community structure features  and text features to classify offensive language via attention mechanisms and positional encoding. In comparison to existing published solutions, we incorporate a "corrected" procedure for computing attention on graph-structured data to produce our user embeddings and a better performing pre-trained language model for our text embeddings. Our model achieves an F1 score of \textbf{FINAL SCORE} outperforming existing published results. Our code is available at \url{https://github.com/guptaviha/GF-OLD}.
+    Transformer-based models have come to dominate natural language processing tasks including semantic evaluation of social media content. Recent research demonstrates that the performance of such models can be improved by incorporating information about the online communities where that content is produced. For our project, we experiment with a novel method for incorporating community structure features  and text features to classify offensive language via attention mechanisms and positional encoding. In comparison to existing published solutions, we incorporate a "corrected" procedure for computing attention on graph-structured data to produce our user embeddings and a better performing pre-trained language model for our text embeddings. Our model achieves an F1 score of \textbf{FINAL SCORE} outperforming our baseline model. Our code is available at \url{https://github.com/guptaviha/GF-OLD}.
 \end{abstract}
 
 \section{Introduction}
 
-Content moderation is a pressing concern for online communities. For over a decade, automated systems have been employed to identify abusive behaviors and offensive language in user-generated content. Early systems relied on hand-crafted rules to extract linguistic features from textual data. Such rule-based systems have largely been replaced by neural network-based systems that can identify more subtle patterns in users' linguistic behaviors. However, research has shown that textual features are not always sufficient for identifying the nature of user-generated content. The rise of social media and the corollary ability to query the social graphs formed by users' activity has opened up a possible data source for constructing the requisite context. The remaining question is how to most effectively provide such context from the available data. Our project focuses on one solution in the context of Twitter: the fusion of text and user embeddings via attention mechanisms.
+Content moderation is a pressing concern for social media platforms. For over a decade, automated systems have been employed to identify abusive behaviors and offensive language in user-generated content. Early systems relied on hand-crafted rules to extract linguistic features from textual data. Such rule-based systems have largely been replaced by neural network-based systems that can identify more subtle patterns in users' linguistic behaviors. However, research has shown that textual features are not always sufficient for identifying the nature of user-generated content. The rise of social media and the corollary ability to query the social graphs formed by users' activity has opened up a possible data source for constructing the requisite context. The remaining question is how to most effectively provide such context from the available data. Our project focuses on one solution in the context of Twitter: the fusion of text and user embeddings via attention mechanisms.
 
 \section{Related work}
 
-\subsection{Semantic evaluation of Twitter content}
 Recent work exploring the application of deep learning for offensive language detection on Twitter can be divided into two different approaches. The first approach focuses solely on text data (e.g., tweets) and the use of pre-trained language models fine-tuned for this domain-specific task. \citep{liu2019-nuli}. DISCUSS TWEETEVAL
 
 
@@ -83,15 +82,19 @@ The second approach combines text data with information about users and communit
 
 DESCRIBE OBJECTIVES.
 
-\subsection{Dataset}
+\subsection{Dataset and preprocessing}
 
-For this project, we will be using the English-language dataset collected, labeleled and made publicly available on GitHub by \citet{Miao2022}.\footnote{\url{https://github.com/mzx4936/GF-OLD-Dataset}} The data was obtained via the Twitter API\footnote{https://developer.twitter.com/en/docs/twitter-api} and contains data from 1,260 users and 12,780 of their tweets posted between Janauary 2018 and March 2021. The dataset also captures the social community in terms of the follower-network between these users with 8,877 such relationships.  
+For this project, we use the English-language dataset collected, labeleled and made publicly available on GitHub by \citet{Miao2022}.\footnote{\url{https://github.com/mzx4936/GF-OLD-Dataset}} The data was obtained via the Twitter API\footnote{https://developer.twitter.com/en/docs/twitter-api} and contains data from 1,260 users and 12,780 of their tweets posted between Janauary 2018 and March 2021. The dataset also captures the social community in terms of the follower-network between these users with 8,877 such relationships. Unlike other Twitter datasets, \citet{Miao2022} construct a dataset to preserve community structures and better reflect real-world distribution of offensive language. They accomplish this by constructing a lexicon of topic-related words rather than offensive words from which they then query for users and their first- and second-order friends whose tweets are also collected. The result is a dataset where the ratio of offensive tweets is 7.90\%, i.e., 1,009 out of the 12,780 total.
+
+To represent the social graph, the users and relationship data are used to construct a graph structure with the users represented by nodes and the follower relationships represented by edges. Drawing on the work of \citet{Mishra2019}, \citet{Miao2022} use the users' historical behavior to represent the propensity of the user to post offensive language. The number of tweets labelled non-offensive and offensive in the training data are used to describe users' historical behavior, i.e., the number of non-offensive tweets and the number of offensive tweets from the training data made by a user are each set as node attributes.
+
+Several text preprocessing steps are taken to prepare the raw text data: emojis are converted to words with similar meanings using third-party libraries\footnote{emoji (\url{https://github.com/carpedm20/emoji}) and ekphrasis (\url{https://github.com/cbaziotis/ekphrasis}).}, URLs replaced with "\textit{http}", hashtags segmented into phrases, and text like user references, dates and email addresses are converted into uniform placeholders, e.g., "\textit{@anonymous2134}" becomes "\textless\textit{user}\textgreater".
 
 \subsection{Model architecture}
 
 We will be following \citet{Miao2022} in using a graph attention network for learning user embeddings and attention mechanisms for fusing user features with tweet features; however, rather than using text embeddings from BERT, we will use the RoBERTa-based model pre-trained on tweets and fine-tuned for offensive language detection \citep{Barbieri2020}.\footnote{\url{https://huggingface.co/cardiffnlp/twitter-roberta-base-offensive}}
 
-All the models discussed here use  focal loss function \citep{lin2017focal}, a modified cross entropy loss designed for dealing with class imbalance. It introduces a scaling factor $(1-p_t)^\gamma$ such that setting $\gamma > 0$ reduces the relative loss for easy examples and puts more emphasis on hard to classify examples. The function can be written
+All the models discussed here use Adam optimizer \citep{Kingma2014} and focal loss function \citep{lin2017focal}, a modified cross entropy loss designed for dealing with class imbalance. It introduces a scaling factor $(1-p_t)^\gamma$ such that setting $\gamma > 0$ reduces the relative loss for easy examples and puts more emphasis on hard to classify examples. The function can be written
 
 $$
 FL(p_t) = \alpha \cdot (1 - p_t)^\gamma \log{p_t}
@@ -111,11 +114,14 @@ As noted by \citet{Brody2021}, the expressiveness of GAT as formulated by \citet
 
 \citet{Miao2022} use GAT to derive their user embeddings prior to performing attention fusion. Because GAT exhibits static attention, the user embeddings derived emphasize global community structure and de-emphasize local structures within the social graph. We hypothesize that substituting GAT with GATv2 will allow the user embeddings to better express the local structures of the social graph.
 
-
-
 \subsubsection{Attention fusion}
 
-DESCRIBE HOW ATTENTION IS USED TO FUSE EMBEDDINGS.
+Attention mechanisms are used to fuse user and text embeddings derived from the graph attention network and the language model. First, the user embeddings corresponding to the current batch's text samples are selected and, then, appended to the text embeddings. The combined embeddings are positionally encoded and input into a multiheaded attention module using scaled dot-product attention as described by \citet{Vaswani2017} after which a residual connection and layer normalization are applied.
+
+\begin{figure*}
+    \includegraphics[width=\linewidth]{architecture_diagram.png}
+    \caption{End-to-end offensive language detection model \citep{Miao2022}.}
+\end{figure*}
 
 \subsection{Training setup}
 
@@ -124,9 +130,6 @@ DESCRIBE TRAINING SETUP: SCRIPTS AND HARDWARE.
 \subsection{Experiments}
 
 DESCRIBE EXPERIMENTS RUN AND RATIONALE.
-
-\section{Results}
-
 \begin{figure*}
     \includegraphics[width=\linewidth]{gat_v_gatv2.png}
     \caption{Comparison of model training accuracy, training loss and test F1 score for GAT and GATv2.}
@@ -142,11 +145,13 @@ DESCRIBE EXPERIMENTS RUN AND RATIONALE.
     \caption{Comparison of model training accuracy, training loss and test F1 score for all attention-fused models.}
 \end{figure*}
 
-SUMMARIZE RESULTS. SHOW LOSS + ACC PLOTS.
+\section{Results}
+
+For our final results, ... 
 
 \section{Discussion}
 
-More data + graph feature engineering. Hyperparameter tuning. Exploring different optimizers and LRs and regularization.
+Our final model is able to achieve a test accuracy of SCORE and an F1 score of SCORE on \citet{Miao2022} Twitter dataset surpassing our baseline by XYZ and XYZ, respectively. There are several avenues for further exploration and possible improvement that we can identify. The first would be a more thorough comparison of models that incorporated hyperparameter tuning on a per-model basis, especially in regard to the application of different learning rates and regularization. The second is to revisit the construction of the social graph and the derivation of the user embeddings to evaluate how well they are capturing community structure. In particular, one could use non-parametric methods for community detection as a baseline against which to measure how effectively the graph attention layer as capturing community features.
 
 \appendix
 
