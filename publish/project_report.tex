@@ -64,21 +64,20 @@
 \maketitle
 
 \begin{abstract}
-    Transformer-based models have come to dominate natural language processing tasks including difficult problems in computational linguistics such as semantic and sentiment analysis. One application for these models is automated content moderation for social media platforms where they can be deployed to flag and remove abusive or harmful content. In the context of offensive language, recent research demonstrates that the performance of such models can be improved by incorporating information about the communities where that content is produced. For our project, we experiment with a novel method for incorporating community structure features and text features to classify offensive language via attention mechanisms and positional encoding. In comparison to existing published solutions, we incorporate a "corrected" procedure for computing attention on graph-structured data to produce our user embeddings and a better performing pre-trained language model for our text embeddings. Our model achieves a mean F1 score of 89.36\% outperforming our baseline model across multiple iterations. Our code is available at \url{https://github.com/guptaviha/GF-OLD}.
+    Transformer-based models have come to dominate natural language processing tasks including difficult problems in computational linguistics such as semantic and sentiment analysis. One application for these models is automated content moderation for social media platforms where they can be deployed to flag and remove abusive or harmful content. In the context of offensive language detection, recent research demonstrates that the performance of such models can be improved by incorporating information about the communities where that content is produced. For our project, we experiment with a novel technique for fusing community structure features and text features to classify offensive language in an end-to-end model via attention mechanisms. We incorporate a "corrected" procedure for computing attention on graph-structured data to produce our user embeddings and a better performing bidirectional encoder for our text embeddings into an existing architecture. Our model achieves a mean F1 score of 89.36\% barely outperforming our baseline model by 0.09\%. Further, our ablation analysis demonstrates that attention fusion tends towards diminishing returns as the underlying embeddings become more expressive. Our code is available at \url{https://github.com/guptaviha/GF-OLD}.
 \end{abstract}
 
 \section{Introduction}
 
-Content moderation is a pressing concern for social media platforms. For over a decade, automated systems have been employed to identify abusive behaviors and offensive language in user-generated content. Early systems relied on hand-crafted rules to extract linguistic features from textual data. Such rule-based systems have largely been replaced by neural network-based systems that can identify more subtle patterns in users' linguistic behaviors. However, research has shown that textual features are not always sufficient for identifying the nature of user-generated content. The rise of social media and the corollary ability to query the social graphs formed by users' activity has opened up a possible data source for constructing the requisite context. The remaining question is how to most effectively provide such context from the available data. Our project focuses on one solution in the context of Twitter: the fusion of text and user embeddings via attention mechanisms.
+Content moderation is a pressing concern for online communities. For over a decade, automated systems have been employed to identify abusive behaviors and offensive language in user-generated content. Early systems relied on hand-crafted rules to extract linguistic features from textual data. Such rule-based systems have largely been replaced by neural network-based systems that can identify more subtle patterns in users' linguistic behaviors. However, research has shown that textual features are not always sufficient for identifying the nature of user-generated content. The rise of social media and the corollary ability to query the social graphs formed by users' activity opened up a rich data source for constructing the requisite context. The remaining question is how to most effectively provide such context from the available data. Our project focuses on one solution in the context of deep learning for offensive language detection in Twitter datasets: the fusion of text and user embeddings in an end-to-end model via attention mechanisms.
 
-\section{Related work}
+Recent work exploring the application of deep learning for offensive language detection in tweets can be divided into two different approaches. The first approach focuses solely on text data (e.g., tweets) and the use of pre-trained language models fine-tuned for this domain-specific task. Architectures centered around bidirectional encoder representations from transformers (BERT) have come to dominate this approach. For instance, \citet{liu2019-nuli} uses a pre-trained BERT model fine-tuned for only 3 epochs achieving an F1 score of 78.26\%. \citet{Barbieri2020} surpass this score by retraining a RoBERTa-base model achieving an F1 score of 81.6\%.
 
-Recent work exploring the application of deep learning for offensive language detection in tweets can be divided into two different approaches. The first approach focuses solely on text data (e.g., tweets) and the use of pre-trained language models fine-tuned for this domain-specific task. For instance, \citet{liu2019-nuli} uses a pre-trained BERT model fine-tuned for only 3 epochs achieving an F1 score of 78.26\%. \citet{Barbieri2020} surpass this score by retraining a RoBERTa-base model achieving an F1 score of 81.6\%.
+The second approach combines text data with information about users and community structure. Typically, this involves training two models: a deep learning model from which user embeddings can be extracted and a classification model that takes as input a text representation and the user embeddings. \citet{qian-etal-2018-leveraging} and \citet{Mishra2019} are recent exemplars of this approach. \citet{qian-etal-2018-leveraging} train a bidirectional long-short term memory network (Bi-LSTM) to produce an intra-user representation based on a users' historical behavior and a reinforced Bi-LSTM network to selectively pull inter-user representation based on similar tweets. In this case, the intra-user representations are learned prior to the training of the reinforced Bi-LSTM network. \citet{Mishra2019} train a graph convolutional network (GCN) on a heterogeneous graph of users and tweets. The output of the first layer of the GCN is then used as input, along with a bag-of-words representation of the text data for a logistic regression model. \citet{qian-etal-2018-leveraging} and \citet{Mishra2019} achieve an F1 score of 77.4\% and 85.4\%, respectively.
 
-The second approach combines text data with information about users and community structure. Typically, this involves training two models: a deep learning model from which user embeddings can be extracted and a classification model that takes as input a text representation and the user embeddings. \citet{qian-etal-2018-leveraging} and \citet{Mishra2019} are recent exemplars of this approach. \citet{qian-etal-2018-leveraging} train a bidirectional long-short term memory network (Bi-LSTM) to produce an intra-user representation based on a users' historical behavior and a reinforced Bi-LSTM network to selectively pull inter-user representation based on similar tweets. In this case, the intra-user representations are learned prior to the training of the reinforced Bi-LSTM network. \citet{Mishra2019} train a graph convolutional network (GCN) on a heterogeneous graph of users and tweets. The output of the first layer of the GCN is then used as input, along with a bag-of-words representation of the text data for a logistic regression model. \citet{qian-etal-2018-leveraging} and \citet{Mishra2019} achieve an F1 score of 0.774 and 0.854, respectively.
+\citet{Miao2022} introduce a method for learning user and text embeddings concurrently and fusing them together before via attention mechanisms. \citet{Miao2022} derive their user embeddings from a graph attention network (GAT) trained on a homogenous social graph of users and the follower relationships between them. Text embeddings are taken from a pre-trained BERT model. These embeddings are then concatenated and fused via attention mechanisms before being passed along to a feedforward classification layer. \citet{Miao2022}'s end-to-end model, which serves as the starting point for our project, achieves a mean F1 score of 0.8994.
 
-
-\citet{Miao2022} introduce a method for learning user and text embeddings concurrently and fusing them together before via attention mechanisms. \citet{Miao2022} derive their user embeddings from a graph attention network (GAT) trained on a homogenous social graph of users and the follower relationships between them. Text embeddings are taken from a pre-trained BERT model. These embeddings are then concatenated and fused via attention mechanisms before being passed along to a feedforward classification layer. \citet{Miao2022}'s end-to-end model, which serves as the starting point for our project, achieves an F1 score of 89.94\%.
+The following report describes our experiments with attention fusion in an end-to-end model for offensive language detection. We first evaluate possible improvements to the graph attention and bidirectional encoder modules. We find that introducing a "corrected" implementation of graph attention and a retrained RoBERTa model leads to a marginal improvement in the end-to-end model increasing the mean F1 score by 0.09\% from our baseline of 89.27\% to 89.36\%. Our ablation analysis demonstrates that attention fusion tends towards diminishing returns as the underlying embeddings become more expressive.
 
 \section{Methodology}
 
@@ -143,16 +142,16 @@ In order to cut down on training time and cost, each model was trained once init
 
 The first experiment we undertook was an attempt to approximately replicate the results of \citet{Miao2022} to use as a baseline for evaluating our modifications to the end-to-end model. Using the default random seed and hyperparameter values provided by \citet{Miao2022}, we obtained a GAT+BERT model that achieved 88.93\% F1 score on the test data. 
 
-Our second set of experiments were to evaluate in isolation from the end-to-end model improvements to the graph attention and bidirectional encoder modules. First, we trained a GAT and a GATv2 model on the offensive language detection task using the same hyperparameters and a learning rate of .01. As can be seen from Figure 2,the training metrics for each are nearly identical with training loss quickly falling to less than 0.001 and training accuracy reaching approximately 90\%. On the test data, GATv2 showed a 1.04\% improvement to the F1 score over GAT. 
+Our second set of experiments were to evaluate in isolation from the end-to-end model improvements to the graph attention and bidirectional encoder modules. First, we trained a GAT and a GATv2 model on the offensive language detection task using the same hyperparameters and a learning rate of .01. As can be seen from Figure 2, the training metrics for each are nearly identical with training loss quickly falling to less than 0.001 and training accuracy reaching approximately 90\%. On the test data, GATv2 showed a 1.04\% improvement to the F1 score over GAT. 
 
-\begin{figure*}
+\begin{figure*}[!h]
     \includegraphics[width=\linewidth]{gat_v_gatv2.png}
     \caption{Comparison of model training accuracy, training loss and test F1 score for GAT and GATv2.}
 \end{figure*}
 
 Next, we trained each of our isolated bidirectional encoder models: BERT, RoBERTa and RoBERTa-RT. Due to RoBERTa's larger memory footprint, the RoBERTa models had to be trained with a batch size of 32, as compared to 64 for BERT. To compensate for this, we trained each RoBERTa model at a reduced learning rate compared to BERT following the square root rule \citep{Granziol2022}, e.g. reducing it from$5\times 10^{-5}$ to $3.5\times 10^{-5}$. All other hyperparameters were kept constant. As can be seen in Figure 3, all models converged quickly during training. Evaluating on the test data showed clear differences in the performance of the different models: BERT achieved an F1 score of 84.81\%, RoBERTa 85.18\%,\footnote{RoBERTa acutally performed slightly better (85.47\%) with a learning rate of $5\times 10^{-5}$} RoBERTa-RT 86.64\%.
 
-\begin{figure*}
+\begin{figure*}[!h]
     \includegraphics[width=\linewidth]{all_berts.png}
     \caption{Comparison of model training accuracy, training loss and test F1 score for BERT, RoBERTa and RoBERTa-RT.}
 \end{figure*}
@@ -182,10 +181,10 @@ After demonstrating the improvements in isolation, we conduct several experiment
     \caption{Selected combinations of different graph attention networks, language models and learning rates ($lr$), trained for 20 epochs with early stopping ($patience=5$). Batch size ($bs$) was only modified in order for the given model to fit in GPU memory.}
 \end{table}
 
-\begin{figure*}
-    \includegraphics[width=\linewidth]{all_joint.png}
-    \caption{Comparison of model training accuracy, training loss and test F1 score for all attention-fused models.}
-\end{figure*}
+% \begin{figure*}[!h]
+%     \includegraphics[width=\linewidth]{all_joint.png}
+%     \caption{Comparison of model training accuracy, training loss and test F1 score for all attention-fused models.}
+% \end{figure*}
 
 \begin{table}
     \begin{tabular}{|c|c|c|c|c|}
@@ -198,7 +197,7 @@ After demonstrating the improvements in isolation, we conduct several experiment
         RoBERTa-RT & 0.8664 & +0.0270 & + 0.0321 & +0.0051 \\
         \hline
     \end{tabular}
-    \caption{Ablation showing additive value of GAT and GATv2 per base language model. Note: In isolation, GATv2 outperformed GATv1 by 1.040\% }
+    \caption{Ablation showing additive value of GAT and GATv2 per base language model. Note: In isolation, GATv2 outperformed GATv1 by 1.040\%.}
 \end{table}
 
 \section{Results}
