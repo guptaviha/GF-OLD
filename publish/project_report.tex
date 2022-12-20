@@ -63,7 +63,7 @@
 \maketitle
 
 \begin{abstract}
-    Transformer-based models have come to dominate natural language processing tasks including semantic evaluation of social media content. Recent research demonstrates that the performance of such models can be improved by incorporating information about the online communities where that content is produced. For our project, we experiment with a novel method for incorporating community structure features  and text features to classify offensive language via attention mechanisms and positional encoding. In comparison to existing published solutions, we incorporate a "corrected" procedure for computing attention on graph-structured data to produce our user embeddings and a better performing pre-trained language model for our text embeddings. Our model achieves an F1 score of \textbf{FINAL SCORE} outperforming our baseline model. Our code is available at \url{https://github.com/guptaviha/GF-OLD}.
+    Transformer-based models have come to dominate natural language processing tasks including difficult problems in computational linguistics such as semantic and sentiment analysis. One application for these models is automated content moderation for social media platforms where they can be deployed to flag and remove abusive or harmful content. In the context of offensive language, recent research demonstrates that the performance of such models can be improved by incorporating information about the communities where that content is produced. For our project, we experiment with a novel method for incorporating community structure features and text features to classify offensive language via attention mechanisms and positional encoding. In comparison to existing published solutions, we incorporate a "corrected" procedure for computing attention on graph-structured data to produce our user embeddings and a better performing pre-trained language model for our text embeddings. Our model achieves an F1 score of \textbf{FINAL SCORE} outperforming our baseline model. Our code is available at \url{https://github.com/guptaviha/GF-OLD}.
 \end{abstract}
 
 \section{Introduction}
@@ -72,19 +72,22 @@ Content moderation is a pressing concern for social media platforms. For over a 
 
 \section{Related work}
 
-Recent work exploring the application of deep learning for offensive language detection on Twitter can be divided into two different approaches. The first approach focuses solely on text data (e.g., tweets) and the use of pre-trained language models fine-tuned for this domain-specific task. \citep{liu2019-nuli}. DISCUSS TWEETEVAL
+Recent work exploring the application of deep learning for offensive language detection can be divided into two different approaches. The first approach focuses solely on text data (e.g., tweets) and the use of pre-trained language models fine-tuned for this domain-specific task. \citet{liu2019-nuli}. SEMANTIC ANALYSIS, DISCUSS TWEETEVAL
 
+The second approach combines text data with information about users and community structure. Typically, this involves training two models: a deep learning model from which user embeddings can be extracted and a classification model that takes as input a text representation and the user embeddings. \citet{qian-etal-2018-leveraging} and \citet{Mishra2019} are recent exemplars of this approach. \citet{qian-etal-2018-leveraging} train a bidirectional long-short term memory network (Bi-LSTM) to produce an intra-user representation based on a users' historical behavior and a reinforced Bi-LSTM network to selectively pull inter-user representation based on similar tweets. In this case, the intra-user representations are learned prior to the training of the reinforced Bi-LSTM network. \citet{Mishra2019} train a graph convolutional network (GCN) on a heterogeneous graph of users and tweets. The output of the first layer of the GCN is then used as input, along with a bag-of-words representation of the text data for a logistic regression model. \citet{qian-etal-2018-leveraging} and \citet{Mishra2019} achieve an F1 score of 0.774 and 0.854, respectively.
 
-The second approach combines text data with information about users and community structure. Recent exemplars of this approach have used graph neural networks to learn the features of the social graph: \citet{Mishra2019} constructs a heterogeneous graph of users and tweets and applies a graph convolutional network to learn its features. \citet{Miao2022} begins by independently extracting text and user embeddings and then fusing them via attention mechanisms. The latter serves as the starting point for our project. EXPAND BOTH OF THESE.
+\citet{Miao2022} introduce a method for learning user and text embeddings concurrently and fusing them together before via attention mechanisms. \citet{Miao2022} derive their user embeddings from a graph attention network (GAT) trained on a homogenous social graph of users and the follower relationships between them. Text embeddings are taken from a pre-trained BERT model. These embeddings are then concatenated and fused via attention mechanisms before being passed along to a feedforward classification layer. \citet{Miao2022}'s end-to-end model, which serves as the starting point for our project, achieves an F1 score of 89.94\%.
 
 
 \section{Methodology}
 
-DESCRIBE OBJECTIVES.
+The aim of this project is to evaluate attention fusion as a means of combining text and community structure features. In practical terms, our first objective was to replicate the results of \citet{Miao2022}. With this as our baseline, we then attempted to surpass the baseline by incorporating modules which, when evaluated in isolation, outperformed the modules used by \citet{Miao2022} in their end-to-end model. Simply put, if more effective base modules were incorporated, then attention fusion would carry those improvements forward to the end-to-end model.
+
+In the rest of this section, we introduce our dataset, describe the architecture of the end-to-end model and our modifications to it. 
 
 \subsection{Dataset and preprocessing}
 
-For this project, we use the English-language dataset collected, labeleled and made publicly available on GitHub by \citet{Miao2022}.\footnote{\url{https://github.com/mzx4936/GF-OLD-Dataset}} The data was obtained via the Twitter API\footnote{https://developer.twitter.com/en/docs/twitter-api} and contains data from 1,260 users and 12,780 of their tweets posted between Janauary 2018 and March 2021. The dataset also captures the social community in terms of the follower-network between these users with 8,877 such relationships. Unlike other Twitter datasets, \citet{Miao2022} construct a dataset to preserve community structures and better reflect real-world distribution of offensive language. They accomplish this by constructing a lexicon of topic-related words rather than offensive words from which they then query for users and their first- and second-order friends whose tweets are also collected. The result is a dataset where the ratio of offensive tweets is 7.90\%, i.e., 1,009 out of the 12,780 total.
+For this project, we use the English-language dataset collected, labelled and made publicly available on GitHub by \citet{Miao2022}.\footnote{\url{https://github.com/mzx4936/GF-OLD-Dataset}} The data was obtained via the Twitter API\footnote{https://developer.twitter.com/en/docs/twitter-api} and contains data from 1,260 users and 12,780 of their tweets posted between January 2018 and March 2021. The dataset also captures the social community in terms of the follower-network between these users with 8,877 such relationships. Unlike other Twitter datasets, \citet{Miao2022} construct a dataset to preserve community structures and better reflect real-world distribution of offensive language. They accomplish this by constructing a lexicon of topic-related words rather than offensive words from which they then query for users and their first- and second-order friends whose tweets are also collected. The result is a dataset where the ratio of offensive tweets is 7.90\%, i.e., 1,009 out of the 12,780 total.
 
 To represent the social graph, the users and relationship data are used to construct a graph structure with the users represented by nodes and the follower relationships represented by edges. Drawing on the work of \citet{Mishra2019}, \citet{Miao2022} use the users' historical behavior to represent the propensity of the user to post offensive language. The number of tweets labelled non-offensive and offensive in the training data are used to describe users' historical behavior, i.e., the number of non-offensive tweets and the number of offensive tweets from the training data made by a user are each set as node attributes.
 
@@ -92,7 +95,12 @@ Several text preprocessing steps are taken to prepare the raw text data: emojis 
 
 \subsection{Model architecture}
 
-We will be following \citet{Miao2022} in using a graph attention network for learning user embeddings and attention mechanisms for fusing user features with tweet features; however, rather than using text embeddings from BERT, we will use the RoBERTa-based model pre-trained on tweets and fine-tuned for offensive language detection \citep{Barbieri2020}.\footnote{\url{https://huggingface.co/cardiffnlp/twitter-roberta-base-offensive}}
+\begin{figure}
+    \includegraphics[width=\linewidth]{architecture_diagram.png}
+    \caption{End-to-end offensive language detection model \citep{Miao2022}.}
+\end{figure}
+
+We follow \citet{Miao2022} in using a graph attention network for learning user embeddings, a language model for deriving the text embeddings and attention mechanisms for fusing user and text embeddings together before passing the fused embeddings to a classification layer. However, we introduce a modification to GAT proposed by \citet{Brody2021} for computing what they call \textit{dynamic attention}. In addition, rather than using text embeddings from BERT, we use two variations of RoBERTa language model: the base RoBERTa model \citep{Devlin2018} and a variant pre-trained on tweets and fine-tuned for offensive language detection \citep{Barbieri2020}.\footnote{\url{https://huggingface.co/cardiffnlp/twitter-roberta-base-offensive}}
 
 All the models discussed here use Adam optimizer \citep{Kingma2014} and focal loss function \citep{lin2017focal}, a modified cross entropy loss designed for dealing with class imbalance. It introduces a scaling factor $(1-p_t)^\gamma$ such that setting $\gamma > 0$ reduces the relative loss for easy examples and puts more emphasis on hard to classify examples. The function can be written
 
@@ -104,7 +112,9 @@ where $p_t = \begin{cases} p, & \text{if } y =1 \\ 1-p, & \text{otherwise}  \end
 
 \subsubsection{Transformer-based language models}
 
-BERT AND DIFFERENCE BETWEEN BERT AND ROBERTA.
+As discussed above, \citet{Miao2022}'s end-to-end model uses BERT \citep{Devlin2018}, a transformer-based language model designed for easy fine-tuning on downstream tasks\citep{Devlin2018}. \citet{Liu2019} found BERT to be significantly understrained and presented a set of improved BERT design choices and training strategies. The product of \citet{Liu2019}'s improved recipe, roBERTa, includes: (1) training the model longer, with bigger batches (8K), over more data; (2) removing the Next Sentence Prediction (NSP) loss to impove downstream tasks which require reasoning about the relationsps between sentence pairs; (3) training on longer full-length sequences; and, (4) dynamically changing the masking pattern applied to the training data compared to the single static masking performed in BERT. A byproduct of (2) is particularly important for the present context: cutting NSP makes it more suitable for downstream tasks where "sentence" inputs are not part of a larger text, e.g., Tweets.
+
+We incorporate RoBERTa into our end-to-end model as a replacement for BERT in \citet{Miao2022}'s end-to-end model keeping the model hyperparameters the same. We try both a base RoBERTa model and a variant fine-tuned for the specific task of offensive language detection in Tweets, TwitterRoBERTa \citep{Barbieri2020}. TwitterRoBERTa retrains RoBERTa-base model on a 60 million Twitter corpus. We use TwitterRoBERTa fine-tuned sepcifically for offensive language detection.\footnote{See TwitterRoBERTa-base for Offensive Language Identification. \url{https://huggingface.co/cardiffnlp/twitter-roberta-base-offensive}} \citet{Barbieri2020} report that their retrained model achieved an F1 score of 81.6\% on the offensive language detection task surpassing RoBERTa-base model by 1.9\%.
 
 \subsubsection{Graph attention networks}
 
@@ -118,16 +128,49 @@ As noted by \citet{Brody2021}, the expressiveness of GAT as formulated by \citet
 
 Attention mechanisms are used to fuse user and text embeddings derived from the graph attention network and the language model. First, the user embeddings corresponding to the current batch's text samples are selected and, then, appended to the text embeddings. The combined embeddings are positionally encoded and input into a multiheaded attention module using scaled dot-product attention as described by \citet{Vaswani2017} after which a residual connection and layer normalization are applied.
 
-\begin{figure*}
-    \includegraphics[width=\linewidth]{architecture_diagram.png}
-    \caption{End-to-end offensive language detection model \citep{Miao2022}.}
-\end{figure*}
-
 \subsection{Training setup}
 
-DESCRIBE TRAINING SETUP: SCRIPTS AND HARDWARE.
+Training and testing were performed via command line scripts. The scripts are largely based off of \citet{Miao2022}'s code repository.\footnote{\url{https://github.com/mzx4936/GF-OLD}} with some modifications (e.g., adding and making available from the command line interface implementations of GATv2 and RoBERTa layers, and end-to-end models incorporating these layers; adding code for saving training metrics and evaluation scores to disk). Our modified fork can be found at \url{https://github.com/guptaviha/GF-OLD}. All models were trained and evaluated in Google Colab-hosted Jupyter notebooks running on a GPU instance (16 GB Tesla T4) for a maximum of 20 epochs with early stopping if the F1 score did not improve in the previous 4 epochs. 
 
 \subsection{Experiments}
+
+We conducted a total of 19 experiments, including our attempts to replicate \citet{Miao2022}'s results, evaluation of isolated models before incorporation into the end-to-end model, and evaluations of different module combinations in the end-to-end model. In order to allow an apples-to-apples comparison between our different models, we use the same random seed value for the weight initialization of each experiment and maintain a consistent data split between each experiment. The latter follows the procedure used by \citet{Miao2022} and ensures a consistent distribution of offensive labels in the train and test data. We also similarly use the \verb|ImbalancedDatasetSampler| provided in \verb|PyTorch| to ensure that offensive labels are well-distributed across training batches.
+
+The first experiment we undertook was an attempt to replicate the results of \citet{Miao2022} to use as a baseline for evaluating our modifications to the end-to-end model. However, we were only able to achieve 
+
+
+To evaluate the performance over various graph and language models, we started by attempting to reproduce the results of Miao2022 and establish a baseline joint model. 
+We then systematically ran identical experiments on the following models
+% BERT(LR 5e-5) vs roBERTa(LR 5e-5/LR 3.5e-5) vs TwitterRoBERTa(LR 5e-5/LR 3.5e-5)
+% GATv1 vs GATv2
+% JOINT(LR 5e-5) vs JOINT_ROBERTA(LR 5e-5/LR 3.5e-5) vs JOINT_TWITTER_ROBERTA(LR 5e-5/LR 3.5e-5)
+% JOINTv2(LR 5e-5) vs JOINTv2_ROBERTA(LR 5e-5/LR 3.5e-5/LR 1e-5) vs JOINTv2_TWITTER_ROBERTA(LR 5e-5/LR 3.5e-5/LR 1e-5)
+
+Each of our experiments was conducted using a fixed set of parameters: a batch size of 32, a GAT learning rate of 1e-2, a BERT learning rate of 5e-5, 3.5e-5, or 1e-5, a dropout rate of 0.5, a transformer attention dropout rate of 0.1, a transformer hidden dropout rate of 0.1, and a hidden vector size of 786. Each experiment ran over a total of 20 epochs with an early stopping patience of 5. Except for batch size and learning rate, all the parameters above were kept identical to Miao2022. Due to CUDA memory constraints, the batch size was reduced from 64 to 32. Following the square root rule (Krizhevsky, 2014), we also experimented with a series of BERT learning rates of 5e-5, 3.5e-5, and 1e-5.
+ 
+For experiments that performed well, we ran a series of 10 experimental runs of 20 epochs each, across different seeds to evaluate the best and average F1 scores.
+\begin{table}
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        \hline 
+        Model & $bs$ & $lr$ & F1 score \\
+        \hline
+        GAT+BERT & 64 & $5\times10^{-5}$ &  0.8893 \\
+        GAT+RoBERTa & 32 & $5\times10^{-5}$ &  0.8779 \\
+        GAT+RoBERTa & 32 & $3.5\times10^{-5}$ &  0.8898 \\
+        GAT+TweetRoBERTa & 32 & $5\times10^{-5}$  & 0.8934 \\
+        GAT+TweetRoBERTa & 32 & $3.5\times10^{-5}$  & 0.8925 \\
+        GATv2+BERT & 64 & $5\times10^{-5}$  & 0.8876 \\
+        GATv2+RoBERTa & 32 & $5\times10^{-5}$ &  0.8968 \\
+        GATv2+RoBERTa & 32 & $3.5\times10^{-5}$ &  0.8983 \\
+        GATv2+RoBERTa & 32 & $1\times10^{-5}$ &  0.8866 \\
+        GATv2+TweetRoBERTa & 32 & $3.5\times10^{-5}$  & 0.8949 \\
+        GATv2+TweetRoBERTa & 32 & $3.5\times10^{-5}$  & 0.8919 \\
+        GATv2+TweetRoBERTa & 32 & $1\times10^{-5}$  & 0.8985 \\
+        \hline
+    \end{tabular}
+    \caption{Selected combinations of different graph attention networks, language models and learning rates ($lr$), trained for 20 epochs with early stopping ($patience=5$). Batch size ($bs$) was only modified in order for the given model to fit in GPU memory.}
+\end{table}
 
 DESCRIBE EXPERIMENTS RUN AND RATIONALE.
 \begin{figure*}
@@ -149,9 +192,25 @@ DESCRIBE EXPERIMENTS RUN AND RATIONALE.
 
 For our final results, ... 
 
+\begin{table}
+    \begin{tabular}{|c||c|c|c|}
+        \hline
+        \hline 
+         & Baseline & Final  \\
+         & GAT+BERT & GATv2 + TweetRoBERTa  \\
+        \hline
+        Mean F1  & 0.8927 & 0.8936  \\
+        Max F1 & 0.9018& 0.012 \\
+        Min F1 & 0.7132 & 0.8230 \\
+        SD F1 & 0.0204 & 0.0114   \\
+        \hline
+    \end{tabular}
+    \caption{Selected combinations of different graph attention networks, language models and learning rates ($lr$), trained for 20 epochs with early stopping ($patience=5$). Batch size ($bs$) was only modified in order for the given model to fit in GPU memory.}
+\end{table}
+
 \section{Discussion}
 
-Our final model is able to achieve a test accuracy of SCORE and an F1 score of SCORE on \citet{Miao2022} Twitter dataset surpassing our baseline by XYZ and XYZ, respectively. There are several avenues for further exploration and possible improvement that we can identify. The first would be a more thorough comparison of models that incorporated hyperparameter tuning on a per-model basis, especially in regard to the application of different learning rates and regularization. The second is to revisit the construction of the social graph and the derivation of the user embeddings to evaluate how well they are capturing community structure. In particular, one could use non-parametric methods for community detection as a baseline against which to measure how effectively the graph attention layer as capturing community features.
+Our final model is able to achieve a test accuracy of SCORE and an F1 score of SCORE on \citet{Miao2022} Twitter dataset surpassing our baseline by XYZ and XYZ, respectively. There are several avenues for further exploration and possible improvement that we can identify. ERROR ANALYSIS. The first would be a more thorough comparison of models that incorporated hyperparameter tuning on a per-model basis, especially in regard to the application of different learning rates and regularization. The second is to revisit the construction of the social graph and the derivation of the user embeddings to evaluate how well they are capturing community structure. In particular, one could use non-parametric methods for community detection as a baseline against which to measure how effectively the graph attention layer as capturing community features.
 
 \appendix
 
