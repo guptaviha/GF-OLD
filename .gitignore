@@ -2,6 +2,7 @@
 /.idea
 **/__pycache__/
 /misc
+/saved_models/**
 
 *.log
 *.fls
