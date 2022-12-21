@@ -3,7 +3,8 @@
 **/__pycache__/
 /misc
 /saved_models/**
-
+/publish/.vscode
+**/cardiffnlp
 *.log
 *.fls
 *.fdb_latexmk
