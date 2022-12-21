@@ -215,15 +215,6 @@ After demonstrating the improvements in isolation, we conduct several experiment
     \caption{Ablation showing additive value of modifying the bidirectional encoder module. As would be expected, the inclusion of more expressive BERT modules leads to an increase in the end-to-end model's performance.}
 \end{table}
 
-\section{Results}
-
-For our final results, we performed 10 iterations each for the baseline GAT+BERT architecture and the final GATv2+RoBERTa-RT architecture. The summary statistics in Table 2 show the mean $\pm$ standard deviation, maximum and minimum test F1 scores. The GATv2+RoBERTa-RT architecture outperforms the baseline \textit{on average} but only by a small margin (0.0009). The result is surprising given that both GATv2 and RoBERTa-RT, when evaluated independently, unambiguously outperform the modules they replace by 0.0104 and 0.0183. Thus, our findings are that, as implemented here, \textit{attention fusion does appear to carry forward some limited portion of the improved representations from preceding layers but with diminishing returns}. 
-
-% \begin{figure}
-%     \includegraphics[width=\linewidth]{cm_baseline.png}
-%     \caption{Confusion matrix for the baseline GAT+BERT model, normalized on true labels.}
-% \end{figure}
-
 \begin{figure}
     \includegraphics[width=\linewidth]{cm_final.png}
     \caption{Confusion matrix for the final GATv2+RoBERTa-RT model, normalized on true labels. Per-class accuracy of 0.98 and 0.88 on non-offensive and offensive labelled tweets, respectively.}
@@ -244,9 +235,18 @@ For our final results, we performed 10 iterations each for the baseline GAT+BERT
     \caption{Summary statistics for 10 iterations of the baseline GAT+BERT and final GATv2+RoBERTa-RT models.}
 \end{table}
 
+\section{Results}
+
+For our final results, we performed 10 iterations each for the baseline GAT+BERT architecture and the final GATv2+RoBERTa-RT architecture. The summary statistics in Table 4 show the mean $\pm$ standard deviation, maximum and minimum test F1 scores. The GATv2+RoBERTa-RT architecture outperforms the baseline \textit{on average} but only by a small margin (0.0009). The result is surprising given that both GATv2 and RoBERTa-RT, when evaluated independently, unambiguously outperform the modules they replace by 0.0104 and 0.0183. Thus, our findings are that, as implemented here, \textit{attention fusion does appear to carry forward some limited portion of the improved representations from preceding layers but with diminishing returns}. 
+
+% \begin{figure}
+%     \includegraphics[width=\linewidth]{cm_baseline.png}
+%     \caption{Confusion matrix for the baseline GAT+BERT model, normalized on true labels.}
+% \end{figure}
+
 \section{Discussion}
 
-Our results indicate that attention fusion appears to carry forward some improvements to representations introduced in preceding layers but with diminishing returns. For our discussion, we identify several avenues for further work and exploration. 
+Our results indicate that attention fusion appears to carry forward some improvements to representations introduced in preceding layers but with diminishing returns. For our discussion, we identify several avenues for further work. 
 
 The first would be a more thorough comparison of models that incorporated hyperparameter tuning on a per-model basis, especially in regard to the application of different learning rates and regularization. At present, other than manually tuning the learning rate for the RoBERTa-based models to compensate for smaller batch sizes, we have not altered any of the model hyperparameters. Of special interest in this regard might be $\alpha$ and $\gamma$ parameters of the focal loss function as these directly relate to how much emphasis is given to the minority label in training. 
 
