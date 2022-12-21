@@ -64,20 +64,20 @@
 \maketitle
 
 \begin{abstract}
-    Transformer-based models have come to dominate natural language processing tasks including difficult problems in computational linguistics such as semantic and sentiment analysis. One application for these models is automated content moderation for social media platforms where they can be deployed to flag and remove abusive or harmful content. In the context of offensive language detection, recent research demonstrates that the performance of such models can be improved by incorporating information about the communities where that content is produced. For our project, we experiment with a novel technique for fusing community structure features and text features to classify offensive language in an end-to-end model via attention mechanisms. We incorporate a "corrected" procedure for computing attention on graph-structured data to produce our user embeddings and a better performing bidirectional encoder for our text embeddings into an existing architecture. Our model achieves a mean F1 score of 89.36\% barely outperforming our baseline model by 0.09\%. Further, our ablation analysis demonstrates that attention fusion tends towards diminishing returns as the underlying embeddings become more expressive. Our code is available at \url{https://github.com/guptaviha/GF-OLD}.
+    Transformer-based models have come to dominate natural language processing tasks including difficult problems in computational linguistics such as semantic and sentiment analysis. One application for these models is automated content moderation for social media platforms where they can be deployed to flag and remove abusive or harmful content. In the context of offensive language detection, recent research demonstrates that the performance of such models can be improved by incorporating information about the communities where that content is produced. For our project, we experiment with a novel technique for fusing community structure features and text features to classify offensive language in an end-to-end model via attention mechanisms. We incorporate a "corrected" procedure for computing attention on graph-structured data to produce our user embeddings and a better performing bidirectional encoder for our text embeddings into an existing architecture. Our model achieves a mean F1 score of 0.8936 barely outperforming our baseline model by 0.0009. Further, our ablation analysis demonstrates that attention fusion tends towards diminishing returns as the underlying embeddings become more expressive. Our code is available at \url{https://github.com/guptaviha/GF-OLD}.
 \end{abstract}
 
 \section{Introduction}
 
 Content moderation is a pressing concern for online communities. For over a decade, automated systems have been employed to identify abusive behaviors and offensive language in user-generated content. Early systems relied on hand-crafted rules to extract linguistic features from textual data. Such rule-based systems have largely been replaced by neural network-based systems that can identify more subtle patterns in users' linguistic behaviors. However, research has shown that textual features are not always sufficient for identifying the nature of user-generated content. The rise of social media and the corollary ability to query the social graphs formed by users' activity opened up a rich data source for constructing the requisite context. The remaining question is how to most effectively provide such context from the available data. Our project focuses on one solution in the context of deep learning for offensive language detection in Twitter datasets: the fusion of text and user embeddings in an end-to-end model via attention mechanisms.
 
-Recent work exploring the application of deep learning for offensive language detection in tweets can be divided into two different approaches. The first approach focuses solely on text data (e.g., tweets) and the use of pre-trained language models fine-tuned for this domain-specific task. Architectures centered around bidirectional encoder representations from transformers (BERT) have come to dominate this approach. For instance, \citet{liu2019-nuli} uses a pre-trained BERT model fine-tuned for only 3 epochs achieving an F1 score of 78.26\%. \citet{Barbieri2020} surpass this score by retraining a RoBERTa-base model achieving an F1 score of 81.6\%.
+Recent work exploring the application of deep learning for offensive language detection in tweets can be divided into two different approaches. The first approach focuses solely on text data (e.g., tweets) and the use of pre-trained language models fine-tuned for this domain-specific task. Architectures centered around bidirectional encoder representations from transformers (BERT) have come to dominate this approach. For instance, \citet{liu2019-nuli} uses a pre-trained BERT model fine-tuned for only 3 epochs achieving an F1 score of 0.7826. \citet{Barbieri2020} surpass this score by retraining a RoBERTa-base model achieving an F1 score of 0.816.
 
-The second approach combines text data with information about users and community structure. Typically, this involves training two models: a deep learning model from which user embeddings can be extracted and a classification model that takes as input a text representation and the user embeddings. \citet{qian-etal-2018-leveraging} and \citet{Mishra2019} are recent exemplars of this approach. \citet{qian-etal-2018-leveraging} train a bidirectional long-short term memory network (Bi-LSTM) to produce an intra-user representation based on a users' historical behavior and a reinforced Bi-LSTM network to selectively pull inter-user representation based on similar tweets. In this case, the intra-user representations are learned prior to the training of the reinforced Bi-LSTM network. \citet{Mishra2019} train a graph convolutional network (GCN) on a heterogeneous graph of users and tweets. The output of the first layer of the GCN is then used as input, along with a bag-of-words representation of the text data for a logistic regression model. \citet{qian-etal-2018-leveraging} and \citet{Mishra2019} achieve an F1 score of 77.4\% and 85.4\%, respectively.
+The second approach combines text data with information about users and community structure. Typically, this involves training two models: a deep learning model from which user embeddings can be extracted and a classification model that takes as input a text representation and the user embeddings. \citet{qian-etal-2018-leveraging} and \citet{Mishra2019} are recent exemplars of this approach. \citet{qian-etal-2018-leveraging} train a bidirectional long-short term memory network (Bi-LSTM) to produce an intra-user representation based on a users' historical behavior and a reinforced Bi-LSTM network to selectively pull inter-user representation based on similar tweets. In this case, the intra-user representations are learned prior to the training of the reinforced Bi-LSTM network. \citet{Mishra2019} train a graph convolutional network (GCN) on a heterogeneous graph of users and tweets. The output of the first layer of the GCN is then used as input, along with a bag-of-words representation of the text data for a logistic regression model. \citet{qian-etal-2018-leveraging} and \citet{Mishra2019} achieve an F1 score of 0.774 and 0.854, respectively.
 
 \citet{Miao2022} introduce a method for learning user and text embeddings concurrently and fusing them together before via attention mechanisms. \citet{Miao2022} derive their user embeddings from a graph attention network (GAT) trained on a homogenous social graph of users and the follower relationships between them. Text embeddings are taken from a pre-trained BERT model. These embeddings are then concatenated and fused via attention mechanisms before being passed along to a feedforward classification layer. \citet{Miao2022}'s end-to-end model, which serves as the starting point for our project, achieves a mean F1 score of 0.8994.
 
-The following report describes our experiments with attention fusion in an end-to-end model for offensive language detection. We first evaluate possible improvements to the graph attention and bidirectional encoder modules. We find that introducing a "corrected" implementation of graph attention and a retrained RoBERTa model leads to a marginal improvement in the end-to-end model increasing the mean F1 score by 0.09\% from our baseline of 89.27\% to 89.36\%. Our ablation analysis demonstrates that attention fusion tends towards diminishing returns as the underlying embeddings become more expressive.
+The following report describes our experiments with attention fusion in an end-to-end model for offensive language detection. We first evaluate possible improvements to the graph attention and bidirectional encoder modules. We find that introducing a "corrected" implementation of graph attention and a retrained RoBERTa model leads to a marginal improvement in the end-to-end model increasing the mean F1 score by 0.0009 from our baseline of 0.8927 to 0.8936. Our ablation analysis demonstrates that attention fusion tends towards diminishing returns as the underlying embeddings become more expressive.
 
 \section{Methodology}
 
@@ -159,10 +159,10 @@ Next, we trained each of our isolated bidirectional encoder models: BERT, RoBERT
 After demonstrating the improvements in isolation, we conduct several experiments to evaluate the incorporation of the different modules on the end-to-end models performance. For this, we initially trained 9 models in addition to our baseline. Each model was trained using the same hyperparameters except for the batch size and learning rate, for the reason mentioned previously: a batch size of 32 or 64 (depending on memory footprint), a learning rate of $1\times 10^{-2}$ for the graph attention layer, a learning rate of $5\times 10^{-5}$ or $3.5\times 10^{-5}$ for all other layers, a dropout rate of 0.5, a transformer attention dropout rate of 0.1, a transformer hidden dropout rate of 0.1, and a hidden vector size of 786. After running these initial experiments, we added two more versions of the GATv2+RoBERTa-RT model with a lower learning rate of $1\times 10^{-5}$ which led to slightly better performance on the test dataset for that particular architecture. The results of each models evaluation on the test dataset can be seen in Table 1. In comparison with our baseline, we can see that GATv2 in combination with the RoBERTa-based model outperform all other possible combinations suggesting that incremental improvements to the performance of the modules does have an impact on the performance of the end-to-end model. Table 2 shows an ablation of the    
 
 \begin{table}
-    \begin{tabular}{|c|c|c|c|c|}
+    \begin{tabular}{|c||c|c|c|c|}
         \hline
-        \hline 
         Model & $bs$ & $lr$ & F1 score \\
+        \hline 
         \hline
         GAT+BERT & 64 & $5\times10^{-5}$ &  0.8893 \\
         GAT+RoBERTa & 32 & $5\times10^{-5}$ &  0.8779 \\
@@ -187,30 +187,55 @@ After demonstrating the improvements in isolation, we conduct several experiment
 % \end{figure*}
 
 \begin{table}
-    \begin{tabular}{|c|c|c|c|c|}
-        \hline
+    \begin{tabular}{|c||c|c|c|c|}
         \hline 
-        Model & Base F1 & +GAT & +GATv2 & Diff \\
+        BERT module & Base F1 & +GAT & +GATv2 & Diff \\
         \hline
-        BERT & 0.8481 & +0.0512 &  +0.0395 & - 0.0117\\
-        RoBERTa & 0.8547 & +0.0351 & +0.0436 & +0.0085\\
-        RoBERTa-RT & 0.8664 & +0.0270 & + 0.0321 & +0.0051 \\
+        \hline
+        None & n/a & 0.7778 & 0.7882 & +0.0104 \\
+        BERT & 0.8481 & \textbf{+0.0512} &  +0.0395  & -0.0117 \\
+        RoBERTa & 0.8547 & +0.0351 & \textbf{+0.0436} & +0.0085 \\
+        RoBERTa-RT & 0.8664 & +0.0270 & \textbf{+ 0.0321} & +0.0051 \\
         \hline
     \end{tabular}
-    \caption{Ablation showing additive value of GAT and GATv2 per base language model. Note: In isolation, GATv2 outperformed GATv1 by 1.040\%.}
+    \caption{Ablation showing additive value of GAT and GATv2 per base language model. the \textit{Diff} column is the difference between the increase attributed to the use of GAT and GATv2. As expected, the inlusion of a more expressive graph attention module }
+\end{table}
+
+\begin{table}
+    \begin{tabular}{|c||c|c|c|}
+        \hline
+        GAT module & BERT & RoBERTa & RoBERTa-RT  \\
+        \hline 
+        \hline
+        None & 0.8481 & +0.0037 &  \textbf{+0.0183}  \\
+        +GAT & 0.8893 & +0.0005 & \textbf{+0.0041} \\
+        +GATv2 & 0.8876 & +0.0107 & \textbf{+0.0109} \\
+        \hline
+    \end{tabular}
+    \caption{Ablation showing additive value of modifying the bidirectional encoder module. As would be expected, the inclusion of more expressive BERT modules leads to an increase in the end-to-end models performance.}
 \end{table}
 
 \section{Results}
 
 For our final results, we performed 10 iterations each for the baseline GAT+BERT architecture and the final GATv2+RoBERTa-RT architecture. The summary statistics in Table 2 show the mean $\pm$ standard deviation, maximum and minimum F1 scores. The GATv2+RoBERTa-RT architecture outperforms the baseline \textit{on average} but only by a small margin of 0.09\%. The result is surprising given that both GATv2 and RoBERTa-RT, when evaluated independently, unambiguously outperform the modules they replace by 1.04\% and 1.83\%. Thus, our findings are inconclusive: as implemented here, \textit{attention fusion does appear to carry forward some limited portion of the improved representations from preceding layers but with diminishing returns}. 
 
+% \begin{figure}
+%     \includegraphics[width=\linewidth]{cm_baseline.png}
+%     \caption{Confusion matrix for the baseline GAT+BERT model, normalized on true labels.}
+% \end{figure}
+
+\begin{figure}
+    \includegraphics[width=\linewidth]{cm_final.png}
+    \caption{Confusion matrix for the final GATv2+RoBERTa-RT model, normalized on true labels.}
+\end{figure}
+
 \begin{table}
     \begin{tabular}{|c||c|c|c|}
         \hline
-        \hline 
          & Baseline & Final  \\
          & GAT+BERT & GATv2 + RoBERTa-RT  \\
         \hline
+        \hline 
         Mean F1  & $0.8927\pm0.0048$ & $\mathbf{0.8936 \pm 0.0047}$  \\
         Max F1 & \textbf{0.9018} & 0.9012 \\
         Min F1 & 0.7132 & \textbf{0.8230} \\
@@ -221,7 +246,7 @@ For our final results, we performed 10 iterations each for the baseline GAT+BERT
 
 \section{Discussion}
 
-Our final model is able to achieve a mean test F1 score of 89.36\% on \citet{Miao2022} Twitter dataset surpassing our baseline by a small margin of 0.09\%. As discussed above, our results indicate that attention fusion appears to carry forward some of the improvements to representations introduced in preceding layers but with diminishing returns. There are several avenues for further exploration and possible improvement that we can identify. 
+Our results indicate that attention fusion appears to carry forward some of the improvements to representations introduced in preceding layers but with diminishing returns. There are several avenues for further exploration and possible improvement that we can identify. 
 
 The first would be a more thorough comparison of models that incorporated hyperparameter tuning on a per-model basis, especially in regard to the application of different learning rates and regularization. At present, outside of manually tuning the learning rate for the RoBERTa-based models to compensate for smaller batch sizes, we have not altered any of the model hyperparameters. Of special interest in this regard might be $\alpha$ and $\gamma$ parameters of the focal loss function as these directly relate to how much emphasis is given to the minority label in training. 
 
@@ -229,7 +254,7 @@ The second is to revisit the construction of the social graph and the derivation
 
 The third is a closer evaluation of attention fusion itself to see how it might be modified to better incorporate more expressive representations from preceding layers. For instance, what are the effects of increasing or decreasing the number of heads in the attention layer?
 
-Lastly, but probably most significantly, do we just need more data? All the models we evaluated overfit the training dataset and, while performing well on the test set vis-\`a-vis other published results, do not generalize exceedingly well. "More data" is generally a good strategy in such cases, but there are only a couple of Twitter datasets labelled for offensive language detection that include user information. For datasets that do not include user information, the retrieval of the missing information is possible but is often encumbered by the deletion of tweets and user accounts in the time since the dataset was originally collected \citep{Mishra2018}. Offensive language detection, and semantic analysis more generally, are amenable to data augmentation strategies, especially generation-based methods such as \citet{liu2020}. However, the end-to-end model described in this report would need to pair this with strategies for augmenting the graph-structured user data as well. While there are techniques for augmenting graph-structured data \citep{zhao2022}, a novel method for linking text and graph-structured text augmentation would need to be developed.
+Lastly, but probably most significantly, do we just need more data? All the models we evaluated overfit the training dataset and, while performing well on the test set vis-\`a-vis other published results, do not generalize exceedingly well. "More data" is generally a good strategy in such cases, but there are only a couple of Twitter datasets labelled for offensive language detection that include user information. For datasets that do not include user information, the retrieval of the missing information is possible but is often encumbered by the deletion of tweets and user accounts in the time since the dataset was originally collected \citep{Mishra2018}. Offensive language detection, and semantic analysis more generally, are amenable to data augmentation strategies, especially generation-based methods such as \citet{liu2020}. However, the end-to-end model described in this report would need to pair this with strategies for augmenting the graph-structured user data as well. While there are techniques for augmenting graph-structured data \citep{zhao2022}, a novel method for linking text and graph-structured data augmentation would need to be developed.
 
 \appendix
 
